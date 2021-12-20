@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const appError = require('../utils/appError');
 const crypto = require('crypto');
 const { findOne, findById } = require('../models/userModel');
+const { promisify } = require('util');
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -64,8 +65,53 @@ exports.signin = catchAsync(async (req, res, next) => {
 
 
 
+
+exports.protect = catchAsync(async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token) {
+    return next(
+      new appError('*You are not loggeg in. Please log in to get acces!', 401)
+    );
+  }
+  //verify the token 
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  //check the user is exists or not
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new appError("*The user belonging to this token does no longer exist", 401)
+    );
+  }
+  //check if the password changed or not after the token has been issued
+  //grant access
+  req.user = currentUser;
+  next();
+});
+
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new appError('You do not have permission to perform this role', 403)
+      );
+    }
+    next();
+  }
+}
+
+
+
 exports.updatePassword = catchAsync(async (req, res, next) => {
-  const user = await findById(req.user.id).select('+password');
+  // This req.user.id comes from protect middleware.
+
+  const user = await User.findById(req.user.id).select('+password');
   if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(new appError('*Your current password is wrong', 401));
   }
@@ -75,6 +121,8 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   createSendToken(user, 200, res);
 });
+
+
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) get the user with this given token 

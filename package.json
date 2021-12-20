@@ -42,5 +42,13 @@
   },
   "engines": {
     "node": ">=10.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BalaDipu/Library_with_Nodejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BalaDipu/Library_with_Nodejs/issues"
+  },
+  "homepage": "https://github.com/BalaDipu/Library_with_Nodejs#readme"
 }
