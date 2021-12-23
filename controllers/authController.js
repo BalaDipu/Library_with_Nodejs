@@ -5,6 +5,7 @@ const appError = require('../utils/appError');
 const crypto = require('crypto');
 const { findOne, findById } = require('../models/userModel');
 const { promisify } = require('util');
+const sendEmail = require('../utils/sendEmail');
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -59,11 +60,9 @@ exports.signin = catchAsync(async (req, res, next) => {
       new appError('*Incorrect email or password!', 401)
     );
   }
-  console.log(user.passwordResetToken);
+  // console.log(user.passwordResetToken);
   createSendToken(user, 200, res);
 });
-
-
 
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -122,6 +121,40 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // Get the user by the given email
+  const user = await User.findOne({ email: req.body.email });
+  console.log(user);
+
+  // Generate the random reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  // send it to the user email
+  const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword/${resetToken}`;
+  const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: 
+  ${resetUrl}.\n If  you don't forgot your password, Please ignore this email`;
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token(valid for 10 min)',
+      message
+    });
+    res.status(200).json({
+      status: 'success',
+      message: 'token sent to email'
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({validateBeforeSave: false});
+    return next(
+      new appError('There is an error sending the email,try again', 500)
+    );
+  }
+});
 
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
