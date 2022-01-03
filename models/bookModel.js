@@ -6,6 +6,10 @@ const bookSchema = new mongoose.Schema({
         type: String,
         required: [true, 'A book must have a title']
     },
+    edition:{
+        type:String,
+        default:'1st'
+    },
     authorName: {
         type: String,
         required: [true, 'A book must have an author name']
@@ -15,12 +19,15 @@ const bookSchema = new mongoose.Schema({
         required: [true, 'A  book must have an ISBN number'],
         unique: true
     },
-    price: {
-        type: Number,
-        required: [true, 'A book must have price']
+    quantity:{
+        type:Number,
+        required:[true, 'Please provide quantity!']
     },
-    image:[String]
+    adminId: {
+        type: mongoose.Schema.ObjectId
+    },
+    image: [String]
 })
 
-const Book = mongoose.model('Book',bookSchema);
+const Book = mongoose.model('Book', bookSchema);
 module.exports = Book;

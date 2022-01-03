@@ -15,8 +15,10 @@ exports.createBook = catchAsync(async(req,res,next)=>{
         title:req.body.title,
         authorName:req.body.authorName,
         bookISBN:req.body.bookISBN,
-        price:req.body.price,
-        image:req.body.image
+        quantity:req.body.quantity,
+        edition:req.body.edition,
+        image:req.body.image,
+        adminId:req.user.id
     })
     sendResponse(res,newBook,201);
 })
