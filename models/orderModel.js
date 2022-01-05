@@ -30,7 +30,18 @@ const orderSchema = mongoose.Schema({
     returnDate: {
         type:Date,
         default:null
+    },
+    payFine:{
+        type:Boolean,
+        default:false
     }
 });
+
+orderSchema.pre('save', async function (next) {
+    if (this.fine==0) return next();
+    this.payFine = true;
+    next();
+  });
+
 const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;
