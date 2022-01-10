@@ -3,6 +3,15 @@ const Order = require('../models/orderModel');
 const appError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
+const sendResponse =(res,data,statusCode)=>{
+  res.status(statusCode).json({
+      status:'success',
+      data:{
+          data
+      }
+  })
+}
+
 
 exports.createOrder = catchAsync(async (req, res, next) => {
   const bookId = req.body.bookId;
@@ -17,13 +26,10 @@ exports.createOrder = catchAsync(async (req, res, next) => {
   req.body.userId = req.user.id;
 
   const newOrder = await Order.create(req.body);
-  res.status(201).json({
-    status: 'success',
-    data: {
-      order: newOrder
-    }
-  })
+
+  sendResponse(res,newOrder,201);
 });
+
 
 exports.deleteOrder = catchAsync(async (req, res, next) => {
   const order = await Order.findOneAndDelete({ _id: req.params.id, orderStatus: 'pending' });
@@ -32,11 +38,10 @@ exports.deleteOrder = catchAsync(async (req, res, next) => {
       new appError('No order found with this id and statusCode')
     );
   }
-  res.status(204).json({
-    status: 'success',
-    data: null
-  })
+
+  sendResponse(res,null,204);
 });
+
 
 exports.renewOrder = catchAsync(async (req, res, next) => {
   const renewOrder = await Order.findOneAndUpdate(
@@ -49,12 +54,8 @@ exports.renewOrder = catchAsync(async (req, res, next) => {
       new appError('No order fount with this id', 504)
     );
   }
-  res.status(204).json({
-    status: 'success',
-    data: {
-      renewOrder
-    }
-  })
+
+  sendResponse(res,renewOrder,200);
 })
 
 
@@ -73,13 +74,10 @@ exports.updateStatus = catchAsync(async (req, res, next) => {
   if(updatedOrder.orderStatus == "accepted"){
     const book = await Book.findOneAndUpdate(updatedOrder.bookId,{ $inc: { quantity: -1 }});
   }
-  res.status(202).json({
-    status: 'success',
-    data: {
-      order: updatedOrder
-    }
-  })
+
+  sendResponse(res,updatedOrder,202);
 })
+
 
 exports.retuenDateUpdate = catchAsync(async (req, res, next) => {
   const updatedOrder = await Order.findOneAndUpdate({ _id: req.params.id, orderStatus: 'accepted' }, { returnDate: req.body.returnDate },
@@ -90,13 +88,10 @@ exports.retuenDateUpdate = catchAsync(async (req, res, next) => {
       new appError('No order found with this id', 504)
     );
   }
-  res.status(202).json({
-    status: 'success',
-    data: {
-      order: updatedOrder
-    }
-  })
+
+  sendResponse(res,updatedOrder,202);
 });
+
 
 exports.returnBook = catchAsync(async (req, res, next) => {
   const updatedOrder = await Order.findOneAndUpdate({ _id: req.params.id, orderStatus: 'accepted', fine: { $eq: 0 } }, { orderStatus: 'returned' },
@@ -107,13 +102,10 @@ exports.returnBook = catchAsync(async (req, res, next) => {
       new appError('No order found with this id or fine unpaid', 504)
     );
   }
-  res.status(202).json({
-    status: 'success',
-    data: {
-      order: updatedOrder
-    }
-  })
+
+  sendResponse(res,updatedOrder,202);
 });
+
 
 exports.payFine = catchAsync(async (req, res, next) => {
   const order = await Order.findOne({
@@ -135,10 +127,5 @@ exports.payFine = catchAsync(async (req, res, next) => {
   order.fine = 0;
   await order.save();
 
-  res.status(200).json({
-    status: 'success',
-    data: {
-      order: order
-    }
-  })
+  sendResponse(res,order,202);
 });

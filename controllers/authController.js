@@ -64,6 +64,13 @@ exports.signin = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true
+  });
+  res.status(200).json({ status: 'success' });
+}
 
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
@@ -150,7 +157,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    await user.save({validateBeforeSave: false});
+    await user.save({ validateBeforeSave: false });
     return next(
       new appError('There is an error sending the email,try again', 500)
     );
