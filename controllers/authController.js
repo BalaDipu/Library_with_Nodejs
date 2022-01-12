@@ -19,6 +19,7 @@ const createSendToken = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
+    // httpOnly secure the cross site scripting attack
     httpOnly: true
   };
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
@@ -65,6 +66,7 @@ exports.signin = catchAsync(async (req, res, next) => {
 });
 
 exports.logout = (req, res) => {
+  //cookie name to value(first parameter is name and 2nd parameter is value)
   res.cookie('jwt', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
@@ -134,7 +136,6 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // Get the user by the given email
   const user = await User.findOne({ email: req.body.email });
-  console.log(user);
 
   // Generate the random reset token
   const resetToken = user.createPasswordResetToken();

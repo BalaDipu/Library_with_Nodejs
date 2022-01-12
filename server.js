@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const app = require('./app');
 const dotenv = require('dotenv');
 
+//always put before all code to be executed
 process.on('uncaughtException', err => {
   console.log(err.name, err.message);
   console.log('Uncaught Exception..Shutting Down.....');
@@ -30,6 +31,8 @@ const server = app.listen(port, () => {
 process.on('unhandledRejection', err => {
   console.log(err.name, err.message);
   console.log('Unhandle Rejection..Shutting Down.....');
+  // we can call just process.exit(1)....but it immediately reject the program without handle the rest of api call.
+  // So we need to shut down the database first then we exit the program
   server.close(() => {
     process.exit(1);
   });

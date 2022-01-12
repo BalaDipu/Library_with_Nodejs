@@ -35,9 +35,12 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 });
 
 exports.updateMe = catchAsync(async (req, res, next) => {
+    console.log(req.file);
+    console.log(req.body);
+    
     if (req.body.password || req.body.passwordConfirm) {
         return next(
-            new appError('This route is not for password update', 403)
+            new appError('This route is not for password update', 400)
         );
     }
     const filteredBody = filteredObj(req.body, 'name', 'email');
@@ -53,7 +56,13 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 // Admin operation 
 exports.getAllusers = catchAsync(async (req, res, next) => {
     const users = await User.find();
-    sendResponse(res,users,200);
+    res.status(200).json({
+        status:'success',
+        total:users.length,
+        data:{
+            users
+        }
+    })
 })
 
 exports.getUser = catchAsync(async (req, res, next) => {
