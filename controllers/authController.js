@@ -40,6 +40,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
+    photo:req.body.photo,
     role: req.body.role
   });
   createSendToken(newUser, 201, res);
@@ -65,14 +66,17 @@ exports.signin = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+
 exports.logout = (req, res) => {
   //cookie name to value(first parameter is name and 2nd parameter is value)
-  res.cookie('jwt', 'loggedout', {
-    expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true
+  res.cookie('jwt','loggedout', {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+    token:null
   });
   res.status(200).json({ status: 'success' });
 }
+
 
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
@@ -81,6 +85,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  }else if (req.headers.cookie.split('=')[1]) {
+    token = req.headers.cookie.split('=')[1];
   }
   if (!token) {
     return next(
@@ -102,10 +108,42 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+exports.isLoggedIn = async (req, res, next) => {
+  console.log(req);
+  if (req.headers?.cookie?.split('=')[1]) {
+    const token = req.headers?.cookie?.split('=')[1];
+    try {
+      // 1) verify token
+      const decoded = await promisify(jwt.verify)(
+        token,
+        process.env.JWT_SECRET
+      );
+
+      // 2) Check if user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+
+      // 3) Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+
+      // THERE IS A LOGGED IN USER
+      res.locals.user = currentUser;
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
+  next();
+};
+
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    console.log(req.user.role);
+    // console.log(req.user.role);
     if (!roles.includes(req.user.role)) {
       return next(
         new appError('You do not have permission to perform this role', 403)
@@ -151,6 +189,13 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
       subject: 'Your password reset token(valid for 10 min)',
       message
     });
+
+    setTimeout(async function(){
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+    },10*60*1000)
+
     res.status(200).json({
       status: 'success',
       message: 'token sent to email'

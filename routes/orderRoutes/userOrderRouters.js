@@ -9,5 +9,6 @@ router.use(authController.protect);
 router.route('/createOrder').post(authController.restrictTo('user'),orderController.createOrder);
 router.delete('/deleteOrder/:id', orderController.deleteOrder);
 router.patch('/renewOrder/:id', orderController.renewOrder);
+router.get('/myOrders', orderController.getMyOrders);
 
 module.exports = router;

@@ -25,8 +25,13 @@ exports.createBook = catchAsync(async (req, res, next) => {
 })
 
 exports.getAllBooks = catchAsync(async (req, res, next) => {
-    const books = await Book.find(req.books);
-    sendResponse(res, books, 200);
+    if(req.user.role ==='admin'){
+        const books = await Book.find({adminId:req.user.id});
+        sendResponse(res, books, 200);
+    }else{
+        const books = await Book.find();
+        sendResponse(res, books, 200);
+    }
 })
 
 exports.getBook = catchAsync(async (req, res, next) => {

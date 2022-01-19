@@ -30,6 +30,20 @@ exports.createOrder = catchAsync(async (req, res, next) => {
   sendResponse(res,newOrder,201);
 });
 
+exports.getMyOrders = catchAsync(async (req, res, next) => {
+  const allOrders = await Order.find({
+      userId: req.user.id,
+      orderStatus: 'accepted'
+  });
+  res.status(200).json({
+      status: 'success',
+      total: allOrders.length,
+      data: {
+          allOrders
+      }
+  })
+})
+
 
 exports.deleteOrder = catchAsync(async (req, res, next) => {
   const order = await Order.findOneAndDelete({ _id: req.params.id, orderStatus: 'pending' });
